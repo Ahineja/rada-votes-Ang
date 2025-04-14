@@ -1,13 +1,13 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
-import { MatTableModule } from "@angular/material/table";
 import { MatPaginatorModule, PageEvent } from "@angular/material/paginator";
-import { MatSortModule, Sort } from "@angular/material/sort";
 import { MatIconModule } from "@angular/material/icon";
 import { MatButtonModule } from "@angular/material/button";
 import { MatCardModule } from "@angular/material/card";
 import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatChipsModule } from "@angular/material/chips";
+import { MatRippleModule } from "@angular/material/core";
 
 import { VotingService } from "../../services/voting.service";
 import { AvailableData } from "../../models/voting.interface";
@@ -20,18 +20,18 @@ import { ErrorMessageComponent } from "../shared/error-message/error-message.com
   imports: [
     CommonModule,
     RouterModule,
-    MatTableModule,
     MatPaginatorModule,
-    MatSortModule,
     MatIconModule,
     MatButtonModule,
     MatCardModule,
     MatTooltipModule,
+    MatChipsModule,
+    MatRippleModule,
     LoadingSpinnerComponent,
     ErrorMessageComponent
   ],
   template: `
-    <mat-card>
+    <mat-card class="container-card">
       <mat-card-header>
         <mat-card-title>
           <mat-icon class="header-icon">ballot</mat-icon>
@@ -48,63 +48,48 @@ import { ErrorMessageComponent } from "../shared/error-message/error-message.com
           <app-error-message [message]="error"></app-error-message>
         </div>
 
-        <div *ngIf="!isLoading && !error" class="table-container">
-          <table mat-table [dataSource]="displayedVotings" matSort (matSortChange)="sortData($event)">
-            <!-- Date Column -->
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                <mat-icon class="header-icon">event</mat-icon>
-                Дата
-              </th>
-              <td mat-cell *matCellDef="let voting">{{ voting.date | date: "dd.MM.yyyy" }}</td>
-            </ng-container>
-
-            <!-- Title Column -->
-            <ng-container matColumnDef="title">
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                <mat-icon class="header-icon">description</mat-icon>
-                Назва
-              </th>
-              <td mat-cell *matCellDef="let voting">{{ voting.title }}</td>
-            </ng-container>
-
-            <!-- Actions Column -->
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef>
-                <mat-icon class="header-icon">more_horiz</mat-icon>
-                Дії
-              </th>
-              <td mat-cell *matCellDef="let voting">
-                <button 
-                  mat-icon-button 
-                  color="primary" 
-                  [routerLink]="['/voting', voting.id]"
-                  [matTooltip]="'Переглянути деталі голосування від ' + (voting.date | date: 'dd.MM.yyyy')"
-                  matTooltipPosition="left"
-                >
-                  <mat-icon>how_to_vote</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="voting-row"></tr>
-
-            <!-- No Data Row -->
-            <tr class="mat-row" *matNoDataRow>
-              <td class="mat-cell" colspan="3">
-                <div class="no-data">
-                  <mat-icon>info</mat-icon>
-                  Немає доступних голосувань
+        <div *ngIf="!isLoading && !error" class="content-wrapper">
+          <div class="votings-grid">
+            <mat-card 
+              *ngFor="let voting of displayedVotings" 
+              class="voting-card" 
+              matRipple
+              [routerLink]="['/voting', voting.id]"
+            >
+              <mat-card-content>
+                <div class="voting-header">
+                  <mat-chip-set>
+                    <mat-chip color="primary" highlighted>
+                      <mat-icon class="chip-icon">event</mat-icon>
+                      {{ voting.date | date: "dd.MM.yyyy" }}
+                    </mat-chip>
+                  </mat-chip-set>
+                  <button 
+                    mat-icon-button 
+                    color="primary"
+                    [matTooltip]="'Переглянути деталі'"
+                    matTooltipPosition="above"
+                    (click)="$event.stopPropagation()"
+                    [routerLink]="['/voting', voting.id]"
+                  >
+                    <mat-icon>how_to_vote</mat-icon>
+                  </button>
                 </div>
-              </td>
-            </tr>
-          </table>
+                <p class="voting-title">{{ voting.title }}</p>
+              </mat-card-content>
+            </mat-card>
+
+            <!-- No Data Message -->
+            <div *ngIf="displayedVotings.length === 0" class="no-data">
+              <mat-icon>info</mat-icon>
+              <span>Немає доступних голосувань</span>
+            </div>
+          </div>
 
           <mat-paginator
             [length]="totalVotings"
             [pageSize]="pageSize"
-            [pageSizeOptions]="[5, 10, 25, 50]"
+            [pageSizeOptions]="[6, 12, 24, 48]"
             (page)="onPageChange($event)"
             aria-label="Виберіть сторінку голосувань"
           >
@@ -114,77 +99,118 @@ import { ErrorMessageComponent } from "../shared/error-message/error-message.com
     </mat-card>
   `,
   styles: [`
-    .table-container {
-      margin-top: 1rem;
-      overflow-x: auto;
+    .container-card {
+      border-radius: 8px;
     }
-    table {
-      width: 100%;
+
+    .content-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .mat-column-date {
-      width: 120px;
+
+    .votings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      padding: 1rem 0;
     }
-    .mat-column-actions {
-      width: 80px;
-      text-align: center;
+
+    .voting-card {
+      height: 100%;
+      border-radius: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      border: 1px solid #e0e0e0;
     }
+
+    .voting-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .voting-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .voting-title {
+      font-size: 1rem;
+      line-height: 1.5;
+      margin: 0;
+      color: #333;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chip-icon {
+      font-size: 16px;
+      height: 16px;
+      width: 16px;
+      margin-right: 4px;
+    }
+
+    .header-icon {
+      vertical-align: middle;
+      margin-right: 8px;
+      color: #1976d2;
+    }
+
     .loading-wrapper,
     .error-wrapper {
       padding: 2rem;
       display: flex;
       justify-content: center;
     }
-    td.mat-column-title {
-      padding: 1rem;
-    }
-    .header-icon {
-      vertical-align: middle;
-      margin-right: 8px;
-      color: #1976d2;
-      font-size: 1.2rem;
-      height: 1.2rem;
-      width: 1.2rem;
-    }
-    mat-card {
-      border-radius: 8px;
-    }
-    mat-card-header {
-      padding: 1rem;
-    }
-    .voting-row {
-      transition: background-color 0.2s;
-    }
-    .voting-row:hover {
-      background-color: #f5f5f5;
-      cursor: pointer;
-    }
+
     .no-data {
+      grid-column: 1 / -1;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       padding: 2rem;
       color: #666;
+      background: #f5f5f5;
+      border-radius: 8px;
     }
+
     .no-data mat-icon {
       color: #1976d2;
     }
-    ::ng-deep .mat-sort-header-content {
-      display: flex !important;
-      align-items: center;
+
+    mat-card-header {
+      padding: 1rem;
+    }
+
+    ::ng-deep .mat-mdc-card-content {
+      padding: 1rem !important;
+    }
+
+    ::ng-deep .mdc-evolution-chip {
+      height: 24px !important;
+    }
+
+    ::ng-deep .mdc-evolution-chip__text-label {
+      font-size: 0.8rem !important;
+      padding: 0 8px !important;
     }
   `]
 })
 export class VotingListComponent implements OnInit {
   allVotings: AvailableData[] = [];
   displayedVotings: AvailableData[] = [];
-  displayedColumns: string[] = ["date", "title", "actions"];
   
   isLoading = false;
   error?: string;
   
   // Pagination
-  pageSize = 10;
+  pageSize = 12;
   currentPage = 0;
   totalVotings = 0;
 
@@ -213,41 +239,14 @@ export class VotingListComponent implements OnInit {
     });
   }
 
-  sortData(sort: Sort): void {
-    if (!sort.active || sort.direction === "") {
-      this.displayedVotings = this.getPageData();
-      return;
-    }
-
-    this.displayedVotings = this.getPageData().sort((a, b) => {
-      const isAsc = sort.direction === "asc";
-      switch (sort.active) {
-        case "date":
-          return this.compare(a.date, b.date, isAsc);
-        case "title":
-          return this.compare(a.title, b.title, isAsc);
-        default:
-          return 0;
-      }
-    });
-  }
-
-  compare(a: string, b: string, isAsc: boolean): number {
-    return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
-  }
-
   onPageChange(event: PageEvent): void {
     this.pageSize = event.pageSize;
     this.currentPage = event.pageIndex;
     this.updateDisplayedVotings();
   }
 
-  private getPageData(): AvailableData[] {
-    const startIndex = this.currentPage * this.pageSize;
-    return this.allVotings.slice(startIndex, startIndex + this.pageSize);
-  }
-
   private updateDisplayedVotings(): void {
-    this.displayedVotings = this.getPageData();
+    const startIndex = this.currentPage * this.pageSize;
+    this.displayedVotings = this.allVotings.slice(startIndex, startIndex + this.pageSize);
   }
 }
