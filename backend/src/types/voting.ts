@@ -1,20 +1,21 @@
 export interface VotingResult {
-  id: string;
+  _id?: string;
+  fileId?: string;  // Optional unique identifier from the JSON file name
   date: string;
   title: string;
-  totalVotes?: number;
-  votesFor?: number;
-  votesAgainst?: number;
-  abstained?: number;
-  didNotVote?: number;
-  deputies?: Deputy[];
+  totalVotes: number;
+  votesFor: number;
+  votesAgainst: number;
+  abstained: number;
+  didNotVote: number;
+  deputies: Deputy[];
 }
 
 export interface Deputy {
-  id: string;
+  id?: string;
   name: string;
-  faction?: string;
-  vote?: "for" | "against" | "abstained" | "not_voted";
+  faction: string;
+  vote: "for" | "against" | "abstained" | "not_voted";
 }
 
 export interface VotingStatistics {
